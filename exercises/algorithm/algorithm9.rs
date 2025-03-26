@@ -1,8 +1,7 @@
 /*
-	heap
-	This question requires you to implement a binary heap function
+    heap
+    This question requires you to implement a binary heap function
 */
-// I AM NOT DONE
 
 use std::cmp::Ord;
 use std::default::Default;
@@ -37,7 +36,22 @@ where
     }
 
     pub fn add(&mut self, value: T) {
-        //TODO
+        self.count += 1;
+        self.items.push(value);
+        let mut current_idx = self.count;
+        while current_idx != 1
+            && !(self.comparator)(
+                &self.items[self.parent_idx(current_idx)],
+                &self.items[current_idx],
+            )
+        {
+            unsafe {
+                let a_ptr = self.items.as_mut_ptr().add(self.parent_idx(current_idx));
+                let b_ptr = self.items.as_mut_ptr().add(current_idx);
+                std::ptr::swap(a_ptr, b_ptr);
+            }
+            current_idx = self.parent_idx(current_idx);
+        }
     }
 
     fn parent_idx(&self, idx: usize) -> usize {
@@ -57,8 +71,15 @@ where
     }
 
     fn smallest_child_idx(&self, idx: usize) -> usize {
-        //TODO
-		0
+        let idx = self.left_child_idx(idx);
+        if !(idx + 1 <= self.count) {
+            return idx;
+        }
+        if (self.comparator)(&self.items[idx], &self.items[idx + 1]) {
+            idx
+        } else {
+            idx + 1
+        }
     }
 }
 
@@ -84,8 +105,27 @@ where
     type Item = T;
 
     fn next(&mut self) -> Option<T> {
-        //TODO
-		None
+        if self.is_empty() {
+            return None;
+        }
+        let mut root = T::default();
+        std::mem::swap(&mut self.items[1], &mut root);
+        self.items[1] = self.items.pop().unwrap();
+        self.count -= 1;
+        let mut current_idx = 1;
+        while self.children_present(current_idx) {
+            let smallest_child_idx = self.smallest_child_idx(current_idx);
+            if (self.comparator)(&self.items[current_idx], &self.items[smallest_child_idx]) {
+                break;
+            }
+            unsafe {
+                let a_ptr = self.items.as_mut_ptr().add(current_idx);
+                let b_ptr = self.items.as_mut_ptr().add(smallest_child_idx);
+                std::ptr::swap(a_ptr, b_ptr);
+            }
+            current_idx = smallest_child_idx;
+        }
+        Some(root)
     }
 }
 
